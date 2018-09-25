@@ -1,21 +1,8 @@
-###############################################################################################################################
-######## Program reads the table from biopharmcatalyst.com with historical FDA event calender.                    #############
-########                                                                                                          #############
-######## The date is parsed with dateutil.parser.                                                                 #############
-######## Table construction:                                                                                      #############
-######## Ticker, Current Price, 52 Hi, 52 Low, Product name, Indication, PDUFA Date, Decision, Decision/PDUFA date#############
-############################################################################################################################### 
-
-
 from bs4 import BeautifulSoup
 import urllib
 import re
 import csv
 import requests
-from datetime import *
-import dateutil.parser as dparser
-from dateutil.relativedelta import *
-import pandas as pd
 # py3
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
