@@ -138,11 +138,6 @@ if __name__ == '__main__':     # if the function is the main function ...
                                     ,db=db
                                     ,unix_socket=unix_socket)
     
-    mydb = mysql.connector.connect(host=host
-            ,user=user
-            ,passwd=passwd
-            ,db=db
-            ,unix_socket=unix_socket)
             
     if not checkSchemaExists(mydb, 'stage'):
         cursor = mydb.cursor()
