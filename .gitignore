@@ -4,3 +4,6 @@ __pycache__/
 # Config files
 *json
 *ini
+
+#Output files
+output/*csv
