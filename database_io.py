@@ -8,6 +8,7 @@ Created on Thu Sep 27 19:52:40 2018
 Functions for mysql database connections
 """
 import sqlalchemy
+import mysql.connector
 from configparser import ConfigParser
 
 def read_config(file_name: str):
@@ -61,8 +62,50 @@ def createStageTable(dbcon, schema_name, table_name, columns):
     dbcur.close()
     return True
 
-def connect_sqlalchemy(host, user, passwd, db):
+def connect_sqlalchemy(config):
+    host = config['server']['host']
+    user = config['server']['user']
+    passwd = config['server']['passwd']
+    db = config['server']['db']
+    
     database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
                                                format(user, passwd, 
                                                       host, db))
     return database_connection
+
+def write_table_to_stage(config, data_pd, table_name):
+    columns = data_pd.columns
+    host = config['server']['host']
+    user = config['server']['user']
+    passwd = config['server']['passwd']
+    db = config['server']['db']
+    unix_socket = config['server']['unix_socket']
+
+    conn_mysql = mysql.connector.connect(host=host
+                                    ,user=user
+                                    ,passwd=passwd
+                                    ,db=db
+                                    ,unix_socket=unix_socket)
+    
+    if not checkSchemaExists(conn_mysql, 'stage'):
+        print('Creating schema stage')
+        cursor = conn_mysql.cursor()
+        cursor.execute('CREATE SCHEMA stage') 
+        cursor.close()
+        
+    if not checkTableExists(conn_mysql, 'stage', table_name):
+        createStageTable(conn_mysql, 'stage', table_name, columns)
+    
+    print('Clearing stage')
+    cursor = conn_mysql.cursor()
+    cursor.execute('truncate table {}.{}'.format('stage',table_name))
+    cursor.close()
+    conn_mysql.close()
+    
+    print('Writing stage')
+    conn_sqlalch = connect_sqlalchemy(config)
+    data_pd.to_sql(if_exists='append'
+                   , name=table_name
+                   , schema='stage'
+                   , con=conn_sqlalch
+                   , index=False)
