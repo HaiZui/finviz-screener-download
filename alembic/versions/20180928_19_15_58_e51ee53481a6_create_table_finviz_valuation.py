@@ -20,9 +20,8 @@ def upgrade():
     connection = op.get_bind()
     connection.execute("""
                     CREATE TABLE finviz.valuation (
-                    `Valid_From` datetime,
-                    `Valid_To` datetime,
-                      `No.` int DEFAULT NULL,
+                    `Valid_From` float,
+                    `Valid_To` float,
                       `Ticker` varchar(16) DEFAULT NULL,
                       `Market Cap` varchar(16) DEFAULT NULL,
                       `P/E` varchar(16) DEFAULT NULL,
@@ -37,9 +36,6 @@ def upgrade():
                       `EPS past 5Y` varchar(16) DEFAULT NULL,
                       `EPS next 5Y` varchar(16) DEFAULT NULL,
                       `Sales past 5Y` varchar(16) DEFAULT NULL,
-                      `Price` varchar(16) DEFAULT NULL,
-                      `Change` varchar(16) DEFAULT NULL,
-                      `Volume` varchar(16) DEFAULT NULL,
                       `Timestamp` float DEFAULT NULL,
                       `Sha256` varbinary(256) DEFAULT NULL
                     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
