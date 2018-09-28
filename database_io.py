@@ -109,7 +109,7 @@ def connect_sqlalchemy(config):
                                                       host, db))
     return database_connection
 
-def write_table_to_prestage(config, data_pd, table_name):
+def writeTablePrestage(config, data_pd, table_name):
     columns = data_pd.columns
     host = config['server']['host']
     user = config['server']['user']
@@ -132,7 +132,7 @@ def write_table_to_prestage(config, data_pd, table_name):
         cursor.close()
         
     if not checkTableExists(conn_mysql, target_schema, table_name):
-        createStageTable(conn_mysql, target_schema, table_name, columns)
+        createStageTable(conn_mysql, target_schema, table_name, columns, calculateHash=False)
     
     print('Clearing {}'.format(target_schema))
     cursor = conn_mysql.cursor()
@@ -148,9 +148,57 @@ def write_table_to_prestage(config, data_pd, table_name):
                    , con=conn_sqlalch
                    , index=False)
     
-    calculateHash(conn_sqlalch, target_schema, table_name, columns)
     return True
+
+
+def writeTableStage(config
+                 , source_schema
+                 , source_table
+                 , target_schema
+                 , target_table
+                 , hash_column = 'Sha256'
+                 , valid_from_col = 'Valid_From'
+                 , valid_to_col = 'Valid_To'
+                 , timestamp = time.time()):
     
+    host = config['server']['host']
+    user = config['server']['user']
+    passwd = config['server']['passwd']
+    db = config['server']['db']
+    unix_socket = config['server']['unix_socket']
+
+    conn_mysql = mysql.connector.connect(host=host
+                                    ,user=user
+                                    ,passwd=passwd
+                                    ,db=db
+                                    ,unix_socket=unix_socket)
+
+    target_schema = 'stage'
+        
+    
+    print('Clearing {}'.format(target_schema))
+    cursor = conn_mysql.cursor()
+    cursor.execute('truncate table {}.{}'.format(target_schema,target_table))
+    cursor.close()
+    conn_mysql.close()
+    
+    print('Writing {}'.format(target_schema))
+    conn_sqlalch = connect_sqlalchemy(config)
+    
+    # Common columns between source and target table
+    execute_string = """
+                    select pre.COLUMN_NAME
+                    from information_schema.COLUMNS as pre
+                    join information_schema.COLUMNS as stage
+                    on pre.COLUMN_NAME = stage.COLUMN_NAME
+                    where pre.TABLE_SCHEMA = 'prestage'
+                    AND stage.TABLE_SCHEMA = 'stage'
+                    and pre.table_name = 'valuation'
+                    and stage.table_name = 'valuation'
+                    """
+    
+    
+    return True  
     
 def rowsUpdated(config
                  , source_schema
