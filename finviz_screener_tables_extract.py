@@ -11,5 +11,5 @@ if __name__ == '__main__':     # if the function is the main function ...
     config = dio.read_config('config_mysql.ini')
     
     data_pd = pd.DataFrame(data=table, columns=columns)
-    dio.write_table_to_stage(config, data_pd, table_name)
+    dio.write_table_to_prestage(config, data_pd, table_name)
 
