@@ -1,1 +1,5 @@
-# finviz-screener-download
+# invest-dw
+
+* Big picture
+
+![image](images/big_picture.png)
