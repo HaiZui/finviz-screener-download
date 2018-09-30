@@ -14,7 +14,7 @@ import re
 import requests
 import time
 
-def table_id(name):
+def TableId(name):
     dict = {'valuation':121,
             'financial':161,
             'ownership':131,
@@ -22,11 +22,11 @@ def table_id(name):
     return dict[name]
 
 
-def screener_table_columns(soup):
+def screenerTableColumns(soup):
     return [col.text.strip() for col in soup.find_all('td',{'class':re.compile('table-top*')})]
 
 def screener_table_soup(name, page=1, rows_per_page=20):
-    url_base = 'https://finviz.com/screener.ashx?v=%d&r=' % table_id(name)
+    url_base = 'https://finviz.com/screener.ashx?v=%d&r=' % TableId(name)
     url = url_base + str(1+rows_per_page*(page-1))
     # Read first page
     r = requests.get(url)
@@ -34,11 +34,11 @@ def screener_table_soup(name, page=1, rows_per_page=20):
     soup = BeautifulSoup(the_page,'lxml')
     return soup
 
-def screener_table(name, page_max=1000):
+def screenerTable(name, page_max=1000):
     soup = screener_table_soup(name, page=1)
 
     # Find column names
-    columns = screener_table_columns(soup)
+    columns = screenerTableColumns(soup)
     columns.append('Timestamp')
     # Treat all subpages
     # Initializations

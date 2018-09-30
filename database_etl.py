@@ -8,9 +8,13 @@ Created on Sat Sep 29 22:06:52 2018
 
 import time
 import database_io as dio
+import mysql.connector
+
+# Maximum epoch date
+max_timestamp = '20380119'
 
 def hashExcludedColumns():
-    list = ['Timestamp']
+    list = ['Timestamp', 'Sha256']
     return list
 
 def hashedColumns(columns):
@@ -20,6 +24,7 @@ def calculateHash(config, schema_name, table_name, columns, hash_column = 'Sha25
     # Build hash select query
     # Do not include determined columns into hash
     hashed_columns = hashedColumns(columns)
+    hashed_columns = sorted(list(set(hashed_columns)-set([hash_column])))
     execute_string = """
                     update {}.{} 
                     set {} = SHA2(cast(`{}` as char(255)), 256)""".format(schema_name
@@ -43,9 +48,9 @@ def createStageTable(dbcon, schema_name, table_name, columns, calculate_hash=Tru
         dbcur.execute(execute_string)
     else:
         execute_string += '{}` varchar(255))'.format(columns[-1])
+    dbcur.execute(execute_string)
     dbcur.close()
     return True
-
 
 def writeTablePrestage(config, data_pd, table_name):
     columns = data_pd.columns
@@ -62,18 +67,18 @@ def writeTablePrestage(config, data_pd, table_name):
                                     ,unix_socket=unix_socket)
     target_schema = 'prestage'
         
-    if not checkSchemaExists(conn_mysql, target_schema):
+    if not dio.checkSchemaExists(conn_mysql, target_schema):
         print('Creating schema {}'.format(target_schema))
         cursor = conn_mysql.cursor()
         cursor.execute('CREATE SCHEMA {}'.format(target_schema)) 
         cursor.close()
         
-    if not checkTableExists(conn_mysql, target_schema, table_name):
-        createStageTable(conn_mysql, target_schema, table_name, columns, calculateHash=False)
-    
+    if not dio.checkTableExists(conn_mysql, target_schema, table_name):
+        createStageTable(conn_mysql, target_schema, table_name, columns, calculate_hash=False)
+
     print('Clearing {}'.format(target_schema))
-    dio.truncateTable(config, target_schema, target_table)
-    
+    dio.truncateTable(config, target_schema, table_name)
+
     print('Writing {}'.format(target_schema))
     conn_sqlalch = dio.connectSqlalchemy(config)
     data_pd.to_sql(if_exists='append'
@@ -81,7 +86,6 @@ def writeTablePrestage(config, data_pd, table_name):
                    , schema=target_schema
                    , con=conn_sqlalch
                    , index=False)
-    conn_sqlalch.close()
     return True
 
 def loadTableHash(config
@@ -95,7 +99,7 @@ def loadTableHash(config
     Loads table from source table to target table and calculates hash.
     Only common fields (with exactly same names) are inserted.
     """
-        
+
     if truncate_target:
         dio.truncateTable(config, target_schema, target_table)
 
@@ -104,7 +108,9 @@ def loadTableHash(config
                  , source_table
                  , target_schema
                  , target_table)
-    
+
+    # To do: possible datatype conversions
+
     # Insert begins
     print('Inserting into {0}.{1}'.format(target_schema, target_table))
     execute_string = """insert into {0}.{1} (`{2}`) select `{2}`
@@ -122,7 +128,7 @@ def loadTableHash(config
                   , common_columns
                   , hash_column)
     return True  
-    
+
 def rowsUpdated(config
                  , source_schema
                  , source_table
@@ -134,11 +140,11 @@ def rowsUpdated(config
                  , timestamp = time.time()):
     
     conn_mysql = dio.connectMySQL(config)
-    
+
     # Execution begins
     cursor = conn_mysql.cursor()
-    
-    execute_string = """select a.{0}
+
+    execute_string = """select cast(a.{0} as char(255))
                         from {1}.{2} a
                         left join {3}.{4} b
                         on a.{0} = b.{0}
@@ -154,9 +160,10 @@ def rowsUpdated(config
                                   , valid_to_col
                                   , timestamp)
     cursor.execute(execute_string)
-    
+
     # Result set
-    rows = list(cursor.fetchall())
+    result = cursor.fetchall()
+    rows = [i[0] for i in result]
     cursor.close()
     conn_mysql.close()
     return rows
@@ -171,11 +178,11 @@ def rowsInserted(config
                  , valid_to_col = 'Valid_To'
                  , timestamp = time.time()):
     conn_mysql = dio.connectMySQL(config)
-    
+
     # Execution begins
     cursor = conn_mysql.cursor()
     
-    execute_string = """select b.{0}
+    execute_string = """select cast(b.{0} as char(255))
                         from {1}.{2} a
                         right join {3}.{4} b
                         on a.{0} = b.{0}
@@ -192,15 +199,83 @@ def rowsInserted(config
                                   , timestamp)
     cursor.execute(execute_string)
     # Result set
-    rows = list(cursor.fetchall())
+    result = cursor.fetchall()
+    rows = [i[0] for i in result]
     cursor.close()
     conn_mysql.close()
     return rows
-                        
+
 def loadTableSCD(config
                  , source_schema
                  , source_table
                  , target_schema
                  , target_table
-                 , hash_column='Sha256'):
+                 , hash_column='Sha256'
+                 , valid_from_col = 'Valid_From'
+                 , valid_to_col = 'Valid_To'):
+    """
+    Loads table into historized dw-table using 
+    slowly changing dimension structure.
+    """
+    # Timestamp used activating/deactivating rows
+    timestamp = time.time()
+
+    rows_inserted = rowsInserted(config
+                 , source_schema
+                 , source_table
+                 , target_schema
+                 , target_table
+                 , hash_column
+                 , valid_from_col
+                 , valid_to_col
+                 , timestamp = timestamp)
+
+    rows_updated = rowsUpdated(config
+                 , source_schema
+                 , source_table
+                 , target_schema
+                 , target_table
+                 , hash_column
+                 , valid_from_col
+                 , valid_to_col
+                 , timestamp = timestamp)
+
+    common_columns = dio.commonColumns(config
+                 , source_schema
+                 , source_table
+                 , target_schema
+                 , target_table)
+
+    # Insert begins
+    print('Inserting into {0}.{1}'.format(target_schema, target_table))
+    execute_string = """insert into {0}.{1} (`{2}`,`{3}`,`{5}`)
+                    select {4}, unix_timestamp('{10}'), `{5}`
+                    from {6}.{7}
+                    where `{8}` in ('{9}')
+                    """.format(target_schema
+                              , target_table
+                              , valid_from_col
+                              , valid_to_col
+                              , timestamp
+                              , "`,`".join(common_columns)
+                              , source_schema
+                              , source_table
+                              , hash_column
+                              , "','".join(rows_inserted)
+                              , max_timestamp)
+    dio.executeQuery(config, execute_string)
+
+    # Updates = devalidate old rows
+    execute_string = """update {0}.{1}
+                    set `{2}` = {3}
+                    where `{4}` in ('{5}')
+                    """.format(target_schema
+                              , target_table
+                              , valid_to_col
+                              , timestamp
+                              , hash_column
+                              , "','".join(rows_updated))
+    dio.executeQuery(config, execute_string)
+    print('Inserted {} rows, updated {} rows'.format(len(rows_inserted)
+                                                    , len(rows_updated)))
     return True

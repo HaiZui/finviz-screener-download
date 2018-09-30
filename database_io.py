@@ -26,7 +26,6 @@ def connectMySQL(config):
     passwd = config['server']['passwd']
     db = config['server']['db']
     unix_socket = config['server']['unix_socket']
-
     conn_mysql = mysql.connector.connect(host=host
                                     ,user=user
                                     ,passwd=passwd
@@ -72,7 +71,6 @@ def checkTableExists(dbcon, schema_name, table_name):
     if dbcur.fetchone()[0] == 1:
         dbcur.close()
         return True
-
     dbcur.close()
     return False
 
@@ -86,7 +84,6 @@ def checkSchemaExists(dbcon, schema_name):
     if dbcur.fetchone()[0] == 1:
         dbcur.close()
         return True
-
     dbcur.close()
     return False
 
@@ -108,6 +105,7 @@ def commonColumns(config
                     AND stage.TABLE_SCHEMA = '{1}'
                     and pre.table_name = '{2}'
                     and stage.table_name = '{3}'
+                    order by pre.COLUMN_NAME
                     """.format(source_schema
                               , target_schema
                               , source_table
