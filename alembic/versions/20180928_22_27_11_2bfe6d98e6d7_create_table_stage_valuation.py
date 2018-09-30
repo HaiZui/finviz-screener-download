@@ -35,7 +35,7 @@ def upgrade():
                       `EPS past 5Y` varchar(16) DEFAULT NULL,
                       `EPS next 5Y` varchar(16) DEFAULT NULL,
                       `Sales past 5Y` varchar(16) DEFAULT NULL,
-                      `Timestamp` float DEFAULT NULL,
+                      `Timestamp` varchar(32) DEFAULT NULL,
                       `Sha256` varbinary(256) DEFAULT NULL
                     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
