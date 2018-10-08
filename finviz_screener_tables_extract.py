@@ -1,7 +1,8 @@
 
-import database_etl as etl
-import database_io as dio
-import finviz as fin
+import invest_dw as idw
+import invest_dw.database_etl as etl
+import invest_dw.database_io as dio
+import invest_dw.finviz as fin
 import pandas as pd
 
 def load_finviz_table(table_name):

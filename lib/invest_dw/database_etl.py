@@ -7,7 +7,7 @@ Created on Sat Sep 29 22:06:52 2018
 """
 
 import time
-import database_io as dio
+import invest_dw.database_io as dio
 import mysql.connector
 
 # Maximum epoch date
