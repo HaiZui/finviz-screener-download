@@ -33,9 +33,6 @@ def upgrade():
                       `Float Short` varchar(16) DEFAULT NULL,
                       `Short Ratio` varchar(16) DEFAULT NULL,
                       `Avg Volume` varchar(16) DEFAULT NULL,
-                      `Price` varchar(16) DEFAULT NULL,
-                      `Change` varchar(16) DEFAULT NULL,
-                      `Volume` varchar(16) DEFAULT NULL,
                       `Timestamp` varchar(20) DEFAULT NULL,
                       `Sha256` varbinary(256) DEFAULT NULL
                       ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

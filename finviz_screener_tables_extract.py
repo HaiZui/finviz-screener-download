@@ -29,9 +29,11 @@ def load_finviz_table(table_name):
                  , hash_column='Sha256')    
 
 if __name__ == '__main__':     # if the function is the main function ...
+    # Daily tables
     load_finviz_table('valuation')
     load_finviz_table('financial')
     load_finviz_table('ownership')
+    # Rapidly updating table
     load_finviz_table('technical')
 
 
