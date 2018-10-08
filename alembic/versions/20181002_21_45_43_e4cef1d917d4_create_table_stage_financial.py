@@ -20,7 +20,7 @@ depends_on = None
 def upgrade():
     connection = op.get_bind()
     connection.execute("""
-                    CREATE TABLE stage.financial (
+                    CREATE TABLE stage.finviz_financial (
                       `Ticker` varchar(255) DEFAULT NULL,
                       `Market Cap` varchar(255) DEFAULT NULL,
                       `Dividend` varchar(255) DEFAULT NULL,
@@ -45,5 +45,5 @@ def upgrade():
 def downgrade():
     connection = op.get_bind()
     connection.execute("""
-                        DROP table stage.financial
+                        DROP table stage.finviz_financial
                         """)

@@ -17,13 +17,13 @@ def load_finviz_table(table_name):
                  , 'prestage'
                  , table_name
                  , 'stage'
-                 , table_name
+                 , 'finviz_'+table_name
                  , hash_column = 'Sha256'
                  , truncate_target = True)
 
     etl.loadTableSCD(config
                  , 'stage'
-                 , table_name
+                 , 'finviz_'+table_name
                  , 'finviz'
                  , table_name
                  , hash_column='Sha256')    
