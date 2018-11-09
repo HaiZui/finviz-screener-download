@@ -1,0 +1,7 @@
+[server]
+host:localhost
+user:root
+passwd:yourpassword
+db:financial
+unix_socket:/var/run/mysqld/mysqld.sock
+  
