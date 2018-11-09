@@ -7,3 +7,10 @@ __pycache__/
 
 #Output files
 output/*csv
+
+# Airflow
+airflow/airflow.cfg
+airflow/airflow.db
+airflow/logs/
+airflow/unittests.cfg
+
