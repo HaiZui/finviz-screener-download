@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup
 import re
 import requests
 import time
+import logging
+import invest_dw.scraping as scraping
 
 def TableId(name):
     dict = {'valuation':121,
@@ -28,8 +30,10 @@ def screenerTableColumns(soup):
 def screener_table_soup(name, page=1, rows_per_page=20):
     url_base = 'https://finviz.com/screener.ashx?v=%d&r=' % TableId(name)
     url = url_base + str(1+rows_per_page*(page-1))
+
     # Read first page
-    r = requests.get(url)
+    r = scraping.request_random_header(url)
+
     the_page = r.text
     soup = BeautifulSoup(the_page,'lxml')
     return soup
@@ -48,7 +52,8 @@ def screenerTable(name, page_max=1000):
     written_rows = rows_per_page
     data = []
     while written_rows == rows_per_page and n_page<=page_max:
-        print('Page: %d' % n_page)
+        logging.info('Page: %d' % n_page)
+        time.sleep(1)
         timestamp = time.time()
         written_rows = 0
         rows = soup.find_all('tr')
