@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     connection = op.get_bind()
-    connection.execute("CREATE SCHEMA stage authorization dbo")
+    connection.execute("CREATE SCHEMA stage")
     connection.execute("""
                     CREATE TABLE stage.finviz_valuation (
                       `Ticker` varchar(16) DEFAULT NULL,
