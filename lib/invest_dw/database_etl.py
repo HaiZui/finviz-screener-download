@@ -27,10 +27,10 @@ def calculateHash(config, schema_name, table_name, columns, hash_column = 'Sha25
     hashed_columns = sorted(list(set(hashed_columns)-set([hash_column])))
     execute_string = """
                     update {}.{} 
-                    set {} = SHA2(cast(`{}` as char(255)), 256)""".format(schema_name
+                    set {} = SHA2(cast(COALESCE(`{}`,'') as char(255)), 256)""".format(schema_name
                         , table_name
                         , hash_column
-                        , "` as char(255))+cast(`".join(hashed_columns))  
+                        , "`,'') as char(255))+cast(COALESCE(`".join(hashed_columns))  
     print('Calculating hash {0}.{1}'.format(schema_name, table_name))
     dio.executeQuery(config, execute_string)
     return True    
