@@ -5,10 +5,10 @@ import invest_dw.database_io as dio
 import invest_dw.kauppalehti as kl
 import pandas as pd
 
-def load_kauppalehti_table():
+def load_kauppalehti_table(exchange):
 	service_name = 'kauppalehti'
-	table_name = 'price'	
-	columns, table = kl.stock_data()
+	table_name = '{}_prices'.format(exchange.lower())
+	columns, table = kl.stock_data(exchange)
 	
 	print('Saving data to database')
 	config = dio.readConfig('config_mysql.ini')
@@ -33,6 +33,6 @@ def load_kauppalehti_table():
 
 if __name__ == '__main__':     # if the function is the main function ...
     # Daily tables
-    load_kauppalehti_table()
+    load_kauppalehti_table('xhel')
 
 
