@@ -14,5 +14,11 @@ airflow/airflow.db
 airflow/logs/
 airflow/unittests.cfg
 
+# Airflow log files when airflow is run locally
+airflow-*.err
+airflow-*.out
+airflow-*.log
+airflow-*.pid
+
 # Cache
 *.pyc
