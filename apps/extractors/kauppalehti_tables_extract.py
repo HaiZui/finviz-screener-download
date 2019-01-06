@@ -34,5 +34,6 @@ def load_kauppalehti_table(exchange):
 if __name__ == '__main__':     # if the function is the main function ...
     # Daily tables
     load_kauppalehti_table('xhel')
+    load_kauppalehti_table('xsto')
 
 

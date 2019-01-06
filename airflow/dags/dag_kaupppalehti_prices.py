@@ -44,11 +44,24 @@ def load_kauppalehti_table(exchange):
 def load_kauppalehti_xhel_table():
     load_kauppalehti_table('xhel')
 
+def load_kauppalehti_xsto_table():
+    load_kauppalehti_table('xsto')
+    
+def load_kauppalehti_xcse_table():
+    load_kauppalehti_table('xcse')
+    
+def load_kauppalehti_fnfi_table():
+    load_kauppalehti_table('fnfi')
+    
 dag = DAG('dag_load_kauppalehti_xhel_prices', description='Load stock prices from Kauppalehti HEX exchange',
                         schedule_interval='*/5 * * * *', # Every 5 minutes
                         start_date=datetime(2018, 10, 29), catchup=False)
 
+
 dummy_operator = DummyOperator(task_id='dummy_task', dag=dag)
-price_operator = PythonOperator(task_id='task_load_kauppalehti_xhel_prices', python_callable=load_kauppalehti_xhel_table, dag=dag)
-dummy_operator >> price_operator
+price_operator_xhel = PythonOperator(task_id='task_load_kauppalehti_xhel_prices', python_callable=load_kauppalehti_xhel_table, dag=dag)
+price_operator_xsto = PythonOperator(task_id='task_load_kauppalehti_xsto_prices', python_callable=load_kauppalehti_xsto_table, dag=dag)
+price_operator_xcse = PythonOperator(task_id='task_load_kauppalehti_xcse_prices', python_callable=load_kauppalehti_xcse_table, dag=dag)
+price_operator_fnfi = PythonOperator(task_id='task_load_kauppalehti_fnfi_prices', python_callable=load_kauppalehti_fnfi_table, dag=dag)
+dummy_operator >> price_operator_xhel >> price_operator_xsto >> price_operator_xcse >> price_operator_fnfi
 
