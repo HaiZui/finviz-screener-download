@@ -10,8 +10,9 @@ Functions for mysql database connections and common executions.
 import sqlalchemy
 import mysql.connector
 from configparser import ConfigParser
+import time
 
-def readConfig(file_name: str):
+def readConfig(file_name):
     config = ConfigParser()
     try:
         config.read(file_name)
@@ -43,14 +44,19 @@ def connectSqlalchemy(config):
                                                       host, db))
     return database_connection
 def executeQuery(config, execute_string):
+        
     conn_mysql = connectMySQL(config)
     cursor = conn_mysql.cursor()
     try:
         try:
             cursor.execute(execute_string)
             conn_mysql.commit()
-        except (mysql.Error, mysql.Warning) as e:
-            print(e)
+        except:
+            # Write log entry
+            writeLog(config=config
+                         ,caller='executeQuery'
+                         ,action='execute failed'
+                         ,description=execute_string)
             return None
     finally:
         cursor.close()
@@ -118,6 +124,77 @@ def commonColumns(config
     conn_mysql.close()
     return rows
 
+
+def writeLog(config
+             , caller=None
+             , schema=None
+             , table=None
+             , action=None
+             , row_count=None
+             , description=None
+             , ):
+    # Format strings
+    if caller:
+        caller = "'"+caller+"'" 
+    else:
+        caller = 'NULL'
+    if schema:
+        schema = "'"+schema+"'" 
+    else:
+        schema = 'NULL'
+    if table:
+        table = "'"+table+"'"
+    else:
+        table = 'NULL'
+    if action:
+        action = "'"+action+"'" 
+    else:
+        action = 'NULL'
+    if row_count:
+        row_count = row_count 
+    else:
+        row_count = 'NULL'
+    if description:
+        description = "'"+description+"'" 
+    else:
+        description = 'NULL'
+        
+    timestamp = time.time()
+    timestamp_str = "{0:.6f}".format(timestamp)
+    
+    execute_string = """
+                    insert into financial.log(
+                    Timestamp
+                    ,Caller
+                    ,SchemaName
+                    ,TableName
+                    ,Action
+                    ,RowCount
+                    ,Description)
+                    values (
+                    {},{},{},{},{},{},{})
+                    """.format(timestamp_str
+                               , caller
+                               , schema
+                               , table
+                               , action
+                               , str(row_count)
+                               , description)
+                    
+    conn_mysql = connectMySQL(config)
+    cursor = conn_mysql.cursor()
+    try:
+        try:
+            cursor.execute(execute_string)
+            conn_mysql.commit()
+        except:
+            print("Error writing log entry! {}".format(execute_string))
+            return None
+    finally:
+        cursor.close()
+        conn_mysql.close()
+        
+    return True    
     
     
     
