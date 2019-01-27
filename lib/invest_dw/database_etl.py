@@ -48,6 +48,7 @@ def createStageTable(dbcon, schema_name, table_name, columns, calculate_hash=Tru
         dbcur.execute(execute_string)
     else:
         execute_string += '{}` varchar(255))'.format(columns[-1])
+
     dbcur.execute(execute_string)
     dbcur.close()
     return True
@@ -112,6 +113,13 @@ def loadTableHash(config
     # To do: possible datatype conversions
 
     # Insert begins
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableHash'
+                 ,action='insert begins')
+    
     print('Inserting into {0}.{1}'.format(target_schema, target_table))
     execute_string = """insert into {0}.{1} (`{2}`) select `{2}`
                     from {3}.{4};
@@ -121,12 +129,30 @@ def loadTableHash(config
                               , source_schema
                               , source_table)
     dio.executeQuery(config, execute_string)
+    
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableHash'
+                 ,action='insert'
+                 ,description='Succeeded')
+    
     # Calculate hash
     calculateHash(config
                   , target_schema
                   , target_table
                   , common_columns
                   , hash_column)
+    
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableHash'
+                 ,action='hash'
+                 ,description='Succeeded')
+
     return True  
 
 def rowsUpdated(config
@@ -248,6 +274,14 @@ def loadTableSCD(config
 
     # Insert begins
     print('Inserting into {0}.{1}'.format(target_schema, target_table))
+
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableSCD'
+                 ,action='insert begins')
+    
     execute_string = """insert into {0}.{1} (`{2}`,`{3}`,`{5}`)
                     select {4}, unix_timestamp('{10}'), `{5}`
                     from {6}.{7}
@@ -264,8 +298,25 @@ def loadTableSCD(config
                               , "','".join(rows_inserted)
                               , max_timestamp)
     dio.executeQuery(config, execute_string)
-
+    
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableSCD'
+                 ,action='insert'
+                 ,row_count=len(rows_inserted)
+                 ,description='succeeded')
+    
     # Updates = devalidate old rows
+    
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableSCD'
+                 ,action='update begins')
+    
     execute_string = """update {0}.{1}
                     set `{2}` = {3}
                     where `{4}` in ('{5}')
@@ -276,6 +327,17 @@ def loadTableSCD(config
                               , hash_column
                               , "','".join(rows_updated))
     dio.executeQuery(config, execute_string)
+    
+    
+    # Write log entry
+    dio.writeLog(config=config
+                 ,schema=target_schema
+                 ,table=target_table
+                 ,caller='loadTableSCD'
+                 ,action='update'
+                 ,row_count=len(rows_updated)
+                 ,description='Succeeded')
+    
     print('Inserted {} rows, updated {} rows'.format(len(rows_inserted)
                                                     , len(rows_updated)))
     return True
