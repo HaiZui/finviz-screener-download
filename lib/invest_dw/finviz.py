@@ -53,7 +53,8 @@ def screenerTable(name, page_max=1000):
     data = []
     while written_rows == rows_per_page and n_page<=page_max:
         logging.info('Page: %d' % n_page)
-        time.sleep(1)
+        # Wait some time in between requests
+        time.sleep(3)
         timestamp = time.time()
         written_rows = 0
         rows = soup.find_all('tr')
