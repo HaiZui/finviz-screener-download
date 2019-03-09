@@ -1,4 +1,5 @@
 from datetime import datetime
+import datetime as dt
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
@@ -13,6 +14,9 @@ import pandas as pd
 invest_dw_dir = '/home/haizui/Documents/GIT/github/invest-dw'
 config_dir = invest_dw_dir + '/config_mysql.ini'
 
+def is_weekday():
+    cur_date = dt.date.today()
+    return bool(len(pd.bdate_range(cur_date, cur_date)))
 
 def load_kauppalehti_table(exchange):
 	service_name = 'kauppalehti'
@@ -42,16 +46,28 @@ def load_kauppalehti_table(exchange):
 	return 'Done'
 
 def load_kauppalehti_xhel_table():
-    load_kauppalehti_table('xhel')
+    if is_weekday():
+        load_kauppalehti_table('xhel')
+    else:
+        return 'Nothing to be done'
 
 def load_kauppalehti_xsto_table():
-    load_kauppalehti_table('xsto')
+    if is_weekday():
+        load_kauppalehti_table('xsto')
+    else:
+        return 'Nothing to be done'
     
 def load_kauppalehti_xcse_table():
-    load_kauppalehti_table('xcse')
+    if is_weekday():
+        load_kauppalehti_table('xcse')
+    else:
+        return 'Nothing to be done'
     
 def load_kauppalehti_fnfi_table():
-    load_kauppalehti_table('fnfi')
+    if is_weekday():
+        load_kauppalehti_table('fnfi')
+    else:
+        return 'Nothing to be done'
     
 dag = DAG('dag_load_kauppalehti_xhel_prices', description='Load stock prices from Kauppalehti HEX exchange',
                         schedule_interval='*/5 * * * *', # Every 5 minutes
@@ -59,9 +75,9 @@ dag = DAG('dag_load_kauppalehti_xhel_prices', description='Load stock prices fro
 
 
 dummy_operator = DummyOperator(task_id='dummy_task', dag=dag)
-price_operator_xhel = PythonOperator(task_id='task_load_kauppalehti_xhel_prices', python_callable=load_kauppalehti_xhel_table, dag=dag)
-price_operator_xsto = PythonOperator(task_id='task_load_kauppalehti_xsto_prices', python_callable=load_kauppalehti_xsto_table, dag=dag)
-price_operator_xcse = PythonOperator(task_id='task_load_kauppalehti_xcse_prices', python_callable=load_kauppalehti_xcse_table, dag=dag)
-price_operator_fnfi = PythonOperator(task_id='task_load_kauppalehti_fnfi_prices', python_callable=load_kauppalehti_fnfi_table, dag=dag)
+price_operator_xhel = PythonOperator(task_id='task_load_kauppalehti_xhel_prices', python_callable=load_kauppalehti_xhel_table, dag=dag, trigger_rule='all_done')
+price_operator_xsto = PythonOperator(task_id='task_load_kauppalehti_xsto_prices', python_callable=load_kauppalehti_xsto_table, dag=dag, trigger_rule='all_done')
+price_operator_xcse = PythonOperator(task_id='task_load_kauppalehti_xcse_prices', python_callable=load_kauppalehti_xcse_table, dag=dag, trigger_rule='all_done')
+price_operator_fnfi = PythonOperator(task_id='task_load_kauppalehti_fnfi_prices', python_callable=load_kauppalehti_fnfi_table, dag=dag, trigger_rule='all_done')
 dummy_operator >> price_operator_xhel >> price_operator_xsto >> price_operator_xcse >> price_operator_fnfi
 
