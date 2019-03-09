@@ -41,15 +41,32 @@ def load_finviz_table(screener_table_name, target_table_name = None):
                  , target_table_name
                  , hash_column='Sha256') 
 
-def load_finviz_price():
-    load_finviz_table(screener_table_name='valuation', target_table_name='price')   
+def load_finviz_valuation():
+    load_finviz_table(screener_table_name='valuation', target_table_name='valuation')   
     return 'Done'
 
-dag = DAG('load_finviz_prices_dag', description='Load stock prices from Finviz',
-                        schedule_interval='*/5 * * * *', # Every 5 minutes
+def load_finviz_financial():
+    load_finviz_table(screener_table_name='financial', target_table_name='financial')   
+    return 'Done'
+
+def load_finviz_ownership():
+    load_finviz_table(screener_table_name='ownership', target_table_name='ownership')   
+    return 'Done'
+
+def load_finviz_technical():
+    load_finviz_table(screener_table_name='technical', target_table_name='technical')   
+    return 'Done'
+
+dag = DAG('dag_load_finviz_screener_tables', description='Load Finviz screener tables',
+                        schedule_interval='00 15 * * *', # Daily at 4 AM
                         start_date=datetime(2018, 10, 29), catchup=False)
 
+
 dummy_operator = DummyOperator(task_id='dummy_task', dag=dag)
-price_operator = PythonOperator(task_id='load_finviz_prices_task', python_callable=load_finviz_price, dag=dag)
-dummy_operator >> price_operator
+price_operator_valuation = PythonOperator(task_id='task_load_finviz_valuation', python_callable=load_finviz_valuation, dag=dag)
+price_operator_financial = PythonOperator(task_id='task_load_finviz_financial', python_callable=load_finviz_financial, dag=dag)
+price_operator_ownership = PythonOperator(task_id='task_load_finviz_ownership', python_callable=load_finviz_ownership, dag=dag)
+price_operator_technical = PythonOperator(task_id='task_load_finviz_technical', python_callable=load_finviz_technical, dag=dag)
+dummy_operator >> price_operator_valuation >> price_operator_financial >> price_operator_ownership >> price_operator_technical
+
 
